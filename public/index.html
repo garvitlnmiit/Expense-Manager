@@ -1,0 +1,149 @@
+<!doctype html>
+
+<!-- ASSIGN OUR ANGULAR MODULE -->
+<html ng-app="expenseManagerApp">
+<head>
+  <!-- META -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Optimize mobile viewport -->
+
+  <title>Expense Manager App</title>
+
+  <!-- SCROLLS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.0.0/css/bootstrap.min.css"><!-- load bootstrap -->
+  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
+  <link rel="stylesheet" href="main.css">
+
+  <!-- SPELLS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.0.0/js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.16/angular.min.js"></script><!-- load angular -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.12.1/ui-bootstrap-tpls.min.js"></script>
+
+  <script src="js/controllers/mainCtrl.js"></script> <!-- load up our controller -->
+  <script src="js/services/mainSrv.js"></script> <!-- load up our service -->
+  <script src="js/core.js"></script> <!-- load our main application -->
+
+</head>
+<!-- SET THE CONTROLLER -->
+<body ng-controller="mainController">
+  <div class="container">
+
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">Cool Expense Manager</a>
+        </div>
+
+      </div><!-- /.container-fluid -->
+    </nav>
+
+    <div class="jumbotron">
+
+      <div class="error-msg">{{errorMsg}}</div>
+
+      <form class="form-inline">
+
+        <div class="form-group">
+          <input type="text" class="form-control" ng-model="friendName" placeholder="Enter friend name" ng-required="true"/>
+        </div>
+
+        <button type="submit" class="btn btn-default" ng-click="addFriend()">Add Friend</button>
+      </form>
+
+      <form class="form-inline">
+
+        <div class="form-group">
+          <select class="form-control" ng-model="selectedPaymentType" ng-options="paymentType for paymentType in paymentTypes"></select>
+        </div>
+
+        <div class="form-group">
+          <select class="form-control" ng-model="selectedFriend" ng-options="friend for friend in friends"></select>
+        </div>
+
+        <div class="form-group">
+          <div class="input-group">
+            <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="dt" is-open="opened" datepicker-options="dateOptions" ng-required="true" close-text="Close" />
+            <span class="input-group-btn">
+              <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+            </span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <select class="form-control" ng-model="selectedCurrencyType" ng-options="currencyType for currencyType in currencyTypes"></select>
+        </div>
+
+        <div class="form-group">
+          <input type="text" class="form-control" ng-model="expenditure"></input>
+        </div>
+
+        <button type="submit" class="btn btn-default" ng-click="addExpense()">Add Expense</button>
+
+      </form>
+    </div>
+
+    <div class="container">
+
+      <div ng-show="expenses.length">
+        <span>
+          Search Filter: <input ng-model="searchText.friendName">
+        </span>
+        <span>
+          Currency Filter : <select ng-model="currencyFilter" ng-options="currencyType for currencyType in currencyFilterTypes"></select>
+        </span>
+      </div>
+
+      <table ng-show="expenses.length" class="table table-striped">
+        <thead>
+          <tr>
+            <th>Payment Type</th>
+            <th>Friend</th>
+            <th>Date</th>
+            <th>Currency Type</th>
+            <th>Amount</th>
+            <th>Delete</th>
+            <th>Edit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr ng-repeat="expense in expenses | orderBy : '-dateTime' | filter : searchText">
+            <td>
+              {{expense.paymentType}}
+            </td>
+            <td>
+              {{expense.friendName}}
+            </td>
+            <td>
+              {{expense.date}}
+            </td>
+            <td>
+              {{expense.currencyType}}
+            </td>
+            <td>
+              {{expense.convertedAmount}}
+            </td>
+            <td>
+              <i class="fa fa-trash-o" ng-click="deleteExpense(expense._id)"></i>
+            </td>
+            <td>
+              <i class="fa fa-pencil" ng-click="editExpense()"></i>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div ng-show="!expenses.length">
+        <b>No expenses, add your first expense</b>
+      </div>
+    </div>
+
+</body>
+</html>
