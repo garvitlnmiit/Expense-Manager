@@ -45,10 +45,12 @@
       </div><!-- /.container-fluid -->
     </nav>
 
-    <div class="jumbotron">
+    <div class="alert {{alerts[alerts.length-1].type}} alert-dismissible" ng-show="alerts.length" role="alert">
+      <button type="button" class="close" ng-click="onAlertClose()" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      {{alerts[alerts.length-1].message}}<small class="alert-size">({{alerts.length}})</small>
+    </div>
 
-      <div class="error-msg">{{errorMsg}}</div>
-
+    <div class="jumbotron friend">
       <form class="form-inline">
 
         <div class="form-group">
@@ -57,6 +59,9 @@
 
         <button type="submit" class="btn btn-default" ng-click="addFriend()">Add Friend</button>
       </form>
+    </div>
+
+    <div class="jumbotron">
 
       <form class="form-inline">
 
@@ -85,7 +90,9 @@
           <input type="text" class="form-control" ng-model="expenditure"></input>
         </div>
 
-        <button type="submit" class="btn btn-default" ng-click="addExpense()">Add Expense</button>
+        <button type="submit" class="btn btn-default" ng-click="onAddEditExpense()">{{addEditExpenseIdc}}</button>
+
+        <button class="btn btn-default" ng-show="addEditExpenseIdc==='Update Expense'" ng-click="onEditCancel()">Cancel</button>
 
       </form>
     </div>
@@ -134,7 +141,7 @@
               <i class="fa fa-trash-o" ng-click="deleteExpense(expense._id)"></i>
             </td>
             <td>
-              <i class="fa fa-pencil" ng-click="editExpense()"></i>
+              <i class="fa fa-pencil" ng-click="onEditClick(expense._id)"></i>
             </td>
           </tr>
         </tbody>

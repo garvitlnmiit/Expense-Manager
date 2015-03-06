@@ -10,8 +10,8 @@ angular.module('expenseManagerService', [])
       create : function(expenseData) {
         return $http.post('/api/expenses', expenseData);
       },
-      edit : function(expenseData) {
-        return $http.put('/api/expenses', expenseData);
+      edit : function(id, expenseData) {
+        return $http.put('/api/expenses/' + id, expenseData);
       },
       delete : function(id) {
         return $http.delete('/api/expenses/' + id);
@@ -72,5 +72,33 @@ angular.module('expenseManagerService', [])
       }
 
       return convertedAmount;
+    }
+  })
+
+  //Alert service
+  .factory('AlertSrv', function(){
+    return {
+      addAlert :
+        function(type, message, alertList) {
+          var alertObj = {
+            type : type,
+            message : message
+          };
+          alertList.push(alertObj);
+          return alertList;
+        },
+
+      removeAlert :
+        function(alertList) {
+          alertList.pop();
+          return alertList;
+        }
+    }
+  })
+
+  //Check isNumber service
+  .factory('IsNumberSrv', function() {
+    return function(num) {
+      return !isNaN(parseFloat(num)) && isFinite(num);
     }
   });

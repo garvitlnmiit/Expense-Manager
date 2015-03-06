@@ -76,10 +76,6 @@ module.exports = function(app) {
 
   });
 
-  app.put('/api/expenses', function(req, res){
-    console.log(req.body);
-  });
-
   // delete an expense
   app.delete('/api/expenses/:expense_id', function(req, res) {
     Expense.remove({
@@ -90,6 +86,27 @@ module.exports = function(app) {
 
       getExpenses(res);
     });
+  });
+
+  app.put('/api/expenses/:expense_id', function(req, res) {
+    Expense.update(
+      {_id:req.params.expense_id},
+      {
+        paymentType : req.body.paymentType,
+        friendName : req.body.friendName,
+        date : req.body.date,
+        dateTime : req.body.dateTime,
+        currencyType : req.body.currencyType,
+        amount : req.body.amount,
+        done : false
+      },
+      function(err, obj) {
+        if(err)
+          res.send(err);
+
+        getExpenses(res);
+      }
+    );
   });
 
   // application -------------------------------------------------------------

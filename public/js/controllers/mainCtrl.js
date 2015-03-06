@@ -1,9 +1,13 @@
 angular.module('expenseManagerController', [])
 
   // inject the service factory into our controller
-  .controller('mainController', ['$scope','$http','ExpenseOps', 'FriendOps', 'CurrencyConverter', function($scope, $http, ExpenseOps, FriendOps, CurrencyConverter) {
+  .controller('mainController', ['$scope','$http', '$location', '$anchorScroll', 'ExpenseOps', 'FriendOps', 'CurrencyConverter', 'AlertSrv', 'IsNumberSrv', function($scope, $http, $location, $anchorScroll, ExpenseOps, FriendOps, CurrencyConverter, AlertSrv, IsNumberSrv) {
 
-    $scope.errorMsg = "";
+    var editExpenseId;
+
+    $scope.alerts = [];
+
+    $scope.addEditExpenseIdc = "Add Expense";
 
     $scope.formData = {};
     $scope.loading = true;
@@ -23,6 +27,10 @@ angular.module('expenseManagerController', [])
       $scope.opened = true;
     };
 
+    $scope.onAlertClose = function() {
+      $scope.alerts = AlertSrv.removeAlert($scope.alerts);
+    }
+
     $scope.friendName = "";
     $scope.friends = ['Select Friend'];
     $scope.selectedFriend = $scope.friends[0];
@@ -40,33 +48,54 @@ angular.module('expenseManagerController', [])
 
     $scope.expenses = [];
 
-    function isNumber(n) {
-      return !isNaN(parseFloat(n)) && isFinite(n);
-    }
+    function makeDefault() {
+      $scope.selectedPaymentType = $scope.paymentTypes[0];
+      $scope.selectedCurrencyType = $scope.currencyTypes[0];
+      $scope.selectedFriend = $scope.friends[0];
+      $scope.dt = new Date();
+      $scope.expenditure = 0;
+    };
 
-    $scope.addExpense = function() {
-
+    function isValidInput() {
+      console.log($scope.alerts);
       if($scope.selectedPaymentType === $scope.paymentTypes[0]) {
-        $scope.errorMsg = "Please select a payment type";
-        return;
+        $scope.alerts = AlertSrv.addAlert('alert-danger', 'Please select a payment type', $scope.alerts);
+        return -1;
       }
 
       if($scope.selectedCurrencyType === $scope.currencyTypes[0]) {
-        $scope.errorMsg = "Please select a currency type";
-        return;
+        $scope.alerts = AlertSrv.addAlert('alert-danger', 'Please select a currency type', $scope.alerts);
+        return -1;
       }
 
       if($scope.selectedFriend === $scope.friends[0]) {
-        $scope.errorMsg = "Please select a friend";
-        return;
+        $scope.alerts = AlertSrv.addAlert('alert-danger', 'Please select a friend', $scope.alerts);
+        return -1;
       }
 
-      if(!isNumber($scope.expenditure)) {
-        $scope.errorMsg = "Please enter a valid amount";
-        return;
+      if(!IsNumberSrv($scope.expenditure)) {
+        $scope.alerts = AlertSrv.addAlert('alert-danger', 'Please enter a valid amount', $scope.alerts);
+        return -1;
       }
 
-      $scope.errorMsg = "";
+      return 0;
+    };
+
+    //Add or Edit expense
+    $scope.onAddEditExpense = function() {
+      if($scope.addEditExpenseIdc === "Add Expense"){
+        $scope.onAddExpense();
+      }else{
+        $scope.onUpdateExpense();
+      }
+    };
+
+    //Add expense
+    $scope.onAddExpense = function() {
+
+      if(isValidInput()==-1){
+        return;
+      }
 
       var expenseObj = {
 
@@ -78,28 +107,81 @@ angular.module('expenseManagerController', [])
         amount : $scope.expenditure
       };
 
-      $scope.createExpense(expenseObj);
-
-      //Make default
-      $scope.selectedPaymentType = $scope.paymentTypes[0];
-      $scope.selectedCurrencyType = $scope.currencyTypes[0];
-      $scope.selectedFriend = $scope.friends[0];
-      $scope.dt = new Date();
-      $scope.expenditure = 0;
-
+      createExpense(expenseObj);
     };
+
+    //Update expense
+    $scope.onUpdateExpense = function() {
+
+      if(isValidInput()==-1){
+        return;
+      }
+
+      var dateObj = new Date($scope.dt);
+
+      var expenseObj = {
+
+        paymentType : $scope.selectedPaymentType,
+        friendName : $scope.selectedFriend,
+        dateTime : dateObj,
+        date : dateObj.getDate() + "-" + (dateObj.getMonth()+1) + "-" + dateObj.getFullYear(),
+        currencyType : $scope.selectedCurrencyType,
+        amount : $scope.expenditure
+      };
+
+      updateExpense(expenseObj);
+    };
+
+    $scope.onEditCancel = function() {
+      $scope.addEditExpenseIdc = "Add Expense";
+      makeDefault();
+    };
+
+    $scope.onEditClick = function(id) {
+
+      var foundFlag = false;
+      var expenseObj;
+
+      for(iter=0; iter<$scope.expenses.length; iter++){
+        if($scope.expenses[iter]._id === id){
+          expenseObj = $scope.expenses[iter];
+          foundFlag = true;
+          editExpenseId = id;
+          break;
+        }
+      }
+
+      if(foundFlag){
+        $scope.selectedPaymentType = expenseObj.paymentType;
+        $scope.selectedFriend = expenseObj.friendName;
+        $scope.dt = expenseObj.dateTime;
+        $scope.selectedCurrencyType = expenseObj.currencyType;
+        $scope.expenditure = expenseObj.amount;
+
+        $scope.addEditExpenseIdc = "Update Expense";
+
+        $location.hash('top');
+        $anchorScroll();
+      }
+    };
+
 
     $scope.addFriend = function() {
 
       $scope.friendName = $scope.friendName.trim().toLowerCase();
 
-      if($scope.friendName && ($scope.friends.indexOf($scope.friendName) == -1)){
-        $scope.friends.push($scope.friendName);
-        $scope.errorMsg = "";
-        $scope.createFriend({name:$scope.friendName});
-      } else {
-        $scope.errorMsg = "Invalid name";
+      if(!$scope.friendName) {
+        $scope.alerts = AlertSrv.addAlert('alert-danger', 'Please enter a valid name', $scope.alerts);
+        return;
       }
+
+      if($scope.friends.indexOf($scope.friendName) != -1) {
+        $scope.alerts = AlertSrv.addAlert('alert-danger', 'Duplicate names are not allowed', $scope.alerts);
+        return;
+      }
+
+      $scope.friends.push($scope.friendName);
+      createFriend({name:$scope.friendName});
     };
 
     //Watching currency filter
@@ -148,7 +230,7 @@ angular.module('expenseManagerController', [])
 
     // CREATE ==================================================================
 
-    $scope.createFriend = function(data) {
+    var createFriend = function(data) {
 
         $scope.loading = true;
 
@@ -162,10 +244,11 @@ angular.module('expenseManagerController', [])
             for(var iter=0; iter<data.length; iter++){
               $scope.friends.push(data[iter].name);
             }
+            $scope.alerts = AlertSrv.addAlert('alert-success', 'Friend added', $scope.alerts);
           });
     };
 
-    $scope.createExpense = function(data) {
+    var createExpense = function(data) {
 
         $scope.loading = true;
 
@@ -176,6 +259,9 @@ angular.module('expenseManagerController', [])
             $scope.loading = false;
             $scope.expenses = dataList;
             calConvertedAmount(dataList);
+
+            $scope.alerts = AlertSrv.addAlert('alert-success', 'Expense added', $scope.alerts);
+            makeDefault();
           });
 
     };
@@ -192,6 +278,28 @@ angular.module('expenseManagerController', [])
           $scope.loading = false;
           $scope.expenses = data; // assign our new list of expenses
           calConvertedAmount(data);
+
+          $scope.alerts = AlertSrv.addAlert('alert-success', 'Expense deleted', $scope.alerts);
+        });
+    };
+
+    // EDIT ==================================================================
+    // edit an expense
+    var updateExpense = function(expenseObj) {
+      $scope.loading = true;
+
+      ExpenseOps.edit(editExpenseId, expenseObj)
+
+        .success(function(dataList) {
+          $scope.loading = false;
+          $scope.expenses = dataList;
+          calConvertedAmount(dataList);
+
+          $scope.addEditExpenseIdc = "Add Expense";
+
+          $scope.alerts = AlertSrv.addAlert('alert-success', 'Expense updated', $scope.alerts);
+
+          makeDefault();
         });
     };
 
