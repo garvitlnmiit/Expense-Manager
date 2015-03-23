@@ -2,7 +2,7 @@ var mongoose = require('mongoose');
 
 module.exports = mongoose.model('Expense', {
   paymentType : {type : String, default: 'Cash'},
-  friendName : {type : String},
+  friendName : {type : Object},
   date : {type : String},
   dateTime : {type : Date},
   currencyType : {type : String, default: 'Rupees'},

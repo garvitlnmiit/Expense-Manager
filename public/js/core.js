@@ -1,1 +1,1 @@
-angular.module('expenseManagerApp', ['ui.bootstrap', 'expenseManagerController', 'expenseManagerService']);
+angular.module('expenseManagerApp', ['ui.bootstrap', 'ngRoute', 'expenseManagerController', 'expenseManagerService', 'expenseManagerDirective']);

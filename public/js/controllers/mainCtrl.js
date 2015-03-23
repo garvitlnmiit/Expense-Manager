@@ -5,7 +5,19 @@ angular.module('expenseManagerController', [])
 
     var editExpenseId;
 
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
     $scope.alerts = [];
+
+    $scope.multiSelectData = [];
+
+    $scope.multiSelectModel = [];
+
+    $scope.multiSelectSettings = {
+      scrollableHeight: '100px',
+      scrollable: true,
+      enableSearch: true
+    };
 
     $scope.addEditExpenseIdc = "Add Expense";
 
@@ -31,10 +43,6 @@ angular.module('expenseManagerController', [])
       $scope.alerts = AlertSrv.removeAlert($scope.alerts);
     }
 
-    $scope.friendName = "";
-    $scope.friends = ['Select Friend'];
-    $scope.selectedFriend = $scope.friends[0];
-
     $scope.paymentTypes = ['Payment Type', 'Credit Card', 'Debit Card', 'Cash'];
     $scope.selectedPaymentType=$scope.paymentTypes[0];
 
@@ -51,7 +59,7 @@ angular.module('expenseManagerController', [])
     function makeDefault() {
       $scope.selectedPaymentType = $scope.paymentTypes[0];
       $scope.selectedCurrencyType = $scope.currencyTypes[0];
-      $scope.selectedFriend = $scope.friends[0];
+      $scope.multiSelectModel = [];
       $scope.dt = new Date();
       $scope.expenditure = 0;
     };
@@ -68,7 +76,7 @@ angular.module('expenseManagerController', [])
         return -1;
       }
 
-      if($scope.selectedFriend === $scope.friends[0]) {
+      if(!$scope.multiSelectModel.length) {
         $scope.alerts = AlertSrv.addAlert('alert-danger', 'Please select a friend', $scope.alerts);
         return -1;
       }
@@ -97,12 +105,14 @@ angular.module('expenseManagerController', [])
         return;
       }
 
+      var selectedFriends = $scope.multiSelectModel;
+
       var expenseObj = {
 
         paymentType : $scope.selectedPaymentType,
-        friendName : $scope.selectedFriend,
+        friendName : selectedFriends,
         dateTime : $scope.dt,
-        date : $scope.dt.getDate() + "-" + ($scope.dt.getMonth()+1) + "-" + $scope.dt.getFullYear(),
+        date : $scope.dt.getDate() + "-" + months[$scope.dt.getMonth()] + "-" + $scope.dt.getFullYear(),
         currencyType : $scope.selectedCurrencyType,
         amount : $scope.expenditure
       };
@@ -122,7 +132,7 @@ angular.module('expenseManagerController', [])
       var expenseObj = {
 
         paymentType : $scope.selectedPaymentType,
-        friendName : $scope.selectedFriend,
+        friendName : $scope.multiSelectModel,
         dateTime : dateObj,
         date : dateObj.getDate() + "-" + (dateObj.getMonth()+1) + "-" + dateObj.getFullYear(),
         currencyType : $scope.selectedCurrencyType,
@@ -137,6 +147,7 @@ angular.module('expenseManagerController', [])
       makeDefault();
     };
 
+    // To edit an expense
     $scope.onEditClick = function(id) {
 
       var foundFlag = false;
@@ -153,10 +164,14 @@ angular.module('expenseManagerController', [])
 
       if(foundFlag){
         $scope.selectedPaymentType = expenseObj.paymentType;
-        $scope.selectedFriend = expenseObj.friendName;
+        $scope.multiSelectModel = [];
         $scope.dt = expenseObj.dateTime;
         $scope.selectedCurrencyType = expenseObj.currencyType;
         $scope.expenditure = expenseObj.amount;
+
+        for(var iter=0; iter<expenseObj.friendName.length; iter++) {
+          $scope.multiSelectModel.push(expenseObj.friendName[iter]);
+        }
 
         $scope.addEditExpenseIdc = "Update Expense";
 
@@ -168,6 +183,8 @@ angular.module('expenseManagerController', [])
 
     $scope.addFriend = function() {
 
+      var found = false;
+
       $scope.friendName = $scope.friendName.trim().toLowerCase();
 
       if(!$scope.friendName) {
@@ -175,12 +192,17 @@ angular.module('expenseManagerController', [])
         return;
       }
 
-      if($scope.friends.indexOf($scope.friendName) != -1) {
+      for(var iter=0; iter<$scope.multiSelectData.length; iter++) {
+        if($scope.multiSelectData[iter]['label'] === $scope.friendName) {
+          found=true;
+          break;
+        }
+      }
+
+      if(found) {
         $scope.alerts = AlertSrv.addAlert('alert-danger', 'Duplicate names are not allowed', $scope.alerts);
         return;
       }
-
-      $scope.friends.push($scope.friendName);
       createFriend({name:$scope.friendName});
     };
 
@@ -213,9 +235,14 @@ angular.module('expenseManagerController', [])
     FriendOps.get()
       .success(function(data) {
         //alert(data);
-        $scope.friends = ['Select Friend'];
+        var obj={};
+        $scope.multiSelectData = [];
         for(var iter=0; iter<data.length; iter++){
-          $scope.friends.push(data[iter].name);
+          obj = {
+            id:data[iter]['_id'],
+            label:data[iter]['name']
+          };
+          $scope.multiSelectData[iter] = obj;
         }
         $scope.loading = false;
       });
@@ -239,10 +266,15 @@ angular.module('expenseManagerController', [])
 
           .success(function(data) {
             $scope.loading = false;
-            $scope.friendName = '';
-            $scope.friends = ['Select Friend'];
+            var obj={};
+            $scope.multiSelectData = [];
+
             for(var iter=0; iter<data.length; iter++){
-              $scope.friends.push(data[iter].name);
+              obj = {
+                id:data[iter]['_id'],
+                label:data[iter]['name']
+              };
+              $scope.multiSelectData[iter]=obj;
             }
             $scope.alerts = AlertSrv.addAlert('alert-success', 'Friend added', $scope.alerts);
           });
